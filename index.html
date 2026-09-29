@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Time Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #FFF1D3;
+            --bg-total: #5D1C6A;
+            --text-total: #FFF1D3;
+            --bg-total-active: #CA5995;
+            --border-total-active: #5D1C6A;
+            --bg-controls: #ffffff;
+            --text-main: #000000;
+            --input-border: #FFB090;
+            --input-bg: #ffffff;
+            --card-bg: #fadace;
+            --card-border: #FFB090;
+            --card-active-bg: #FFB090;
+            --card-active-border: #fadace;
+            --project-color: #5D1C6A;
+            --timer-color: #CA5995;
+            --timer-active-color: #5D1C6A;
+            --btn-add-bg: #5D1C6A;
+            --btn-add-text: #ffffff;
+            --btn-start-bg: #CA5995;
+            --btn-start-text: #000000;
+            --btn-stop-bg: #5D1C6A;
+            --btn-stop-text: #ffffff;
+            --btn-adjust-bg: #ffffff;
+            --btn-adjust-text: #000000;
+            --btn-del-bg: #ffffff;
+            --btn-del-text: #999999;
+            --btn-del-hover-bg: #fadbd8;
+            --btn-del-hover-text: #e74c3c;
+            --project-active-color: #5d1c6a;
+            --btn-theme-bg: #5d1c6a;
+            --btn-theme-text: #ffffff;
+        }
+
+        body.theme-bw {
+            --bg-body: #ffffff;
+            --bg-total: #000000;
+            --text-total: #ffffff;
+            --bg-total-active: #6D6D6D;
+            --border-total-active: #000000;
+            --bg-controls: #919191;
+            --text-main: #000000;
+            --input-border: #000000;
+            --input-bg: #ffffff;
+            --card-bg: #000000;
+            --card-border: #444444;
+            --card-active-bg: #6D6D6D;
+            --card-active-border: #000000;
+            --project-color: #ffffff;
+            --timer-color: #ffffff;
+            --timer-active-color: #000000;
+            --btn-add-bg: #ffffff;
+            --btn-add-text: #000000;
+            --btn-start-bg: #ffffff;
+            --btn-start-text: #000000;
+            --btn-stop-bg: #000000;
+            --btn-stop-text: #ffffff;
+            --btn-adjust-bg: #ffffff;
+            --btn-adjust-text: #000000;
+            --btn-del-bg: #ffffff;
+            --btn-del-text: #C0C0C0;
+            --btn-del-hover-bg: #f44336;
+            --btn-del-hover-text: #000000;
+            --project-active-color: #000000;
+            --btn-theme-bg: #000000;
+            --btn-theme-text: #ffffff;
+        }
+
+        body.theme-dark {
+            --bg-body: #000000;
+            --bg-total: #C0C0C0;
+            --text-total: #000000;
+            --bg-total-active: #919191;
+            --border-total-active: #FFFFFF;
+            --bg-controls: #C0C0C0;
+            --text-main: #FFFFFF;
+            --input-border: #FFFFFF;
+            --input-bg: #000000;
+            --card-bg: #C0C0C0;
+            --card-border: #444444;
+            --card-active-bg: #6D6D6D;
+            --card-active-border: #FFFFFF;
+            --project-color: #ffffff;
+            --timer-color: #000000;
+            --timer-active-color: #ffffff;
+            --btn-add-bg: #000000;
+            --btn-add-text: #ffffff;
+            --btn-start-bg: #000000;
+            --btn-start-text: #ffffff;
+            --btn-stop-bg: #ffffff;
+            --btn-stop-text: #000000;
+            --btn-adjust-bg: #000000;
+            --btn-adjust-text: #ffffff;
+            --btn-del-bg: #000000;
+            --btn-del-text: #C0C0C0;
+            --btn-del-hover-bg: #f44336;
+            --btn-del-hover-text: #ffffff;
+            --project-active-color: #ffffff;
+            --btn-theme-bg: #ffffff;
+            --btn-theme-text: #000000;
+        }
+
+        body { 
+            font-family: sans-serif; 
+            background: var(--bg-body); 
+            color: var(--text-main);
+            padding: 20px; 
+            transition: background 0.3s, color 0.3s;
+        }
+        .container { max-width: 650px; margin: 0 auto; }
+        
+        .total-box { 
+            background: var(--bg-total); 
+            color: var(--text-total); 
+            padding: 20px; 
+            border-radius: 10px; 
+            text-align: center; 
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .total-box.active { 
+            background: var(--bg-total-active); 
+            border-bottom: 4px solid var(--border-total-active); 
+        }
+        .total-box h1 { margin: 5px 0; font-family: monospace; font-size: 2.5rem; }
+
+        .controls { 
+            background: var(--bg-controls); 
+            padding: 20px; 
+            border-radius: 10px; 
+            display: flex; 
+            gap: 10px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            transition: background 0.3s;
+        }
+        
+        .day-bar { align-items: center; justify-content: space-between; }
+        #daySelect { 
+            padding: 10px; 
+            border-radius: 5px; 
+            border: 2px solid var(--input-border); 
+            font-weight: bold; 
+            background: var(--input-bg); 
+            color: var(--text-main);
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .summary-container { 
+            background: var(--card-bg); 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            display: none; 
+            overflow-x: auto; 
+            border: 2px solid var(--card-border); 
+        }
+        table.summary-table { width: 100%; border-collapse: collapse; text-align: left; color: var(--text-main); font-size: 0.9rem;}
+        .summary-table th, .summary-table td { padding: 8px; border-bottom: 1px solid var(--card-border); }
+        .summary-table th { background: rgba(0,0,0,0.05); }
+        .summary-table tr:last-child td { border-bottom: none; }
+        .summary-table .col-total { font-weight: bold; }
+
+        input { 
+            flex: 1; 
+            padding: 12px; 
+            border: 2px solid var(--input-border); 
+            border-radius: 5px; 
+            font-size: 1rem; 
+            background: var(--input-bg);
+            color: var(--text-main);
+            transition: all 0.3s;
+        }        
+
+        .btn-theme { background: var(--btn-theme-bg); color: var(--btn-theme-text); }
+        
+        .global-actions {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 5px;
+        }
+        
+        .theme-buttons { display: flex; gap: 8px; }
+
+        .bottom-actions {
+            display: flex; 
+            justify-content: center; 
+            gap: 10px; 
+            margin-top: 20px; 
+            padding: 20px 0;
+        }
+
+        .task-card { 
+            background: var(--card-bg); margin-bottom: 12px; padding: 20px; border-radius: 8px; 
+            display: flex; flex-direction: column; gap: 15px; border-left: 6px solid var(--card-border);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;
+        }
+        .task-card.active { 
+            border-left-color: var(--card-active-border); background: var(--card-active-bg);
+            transform: scale(1.02); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-top { display: flex; justify-content: space-between; align-items: center; }
+        .project-name { font-weight: bold; font-size: 2rem; flex: 1; color: var(--project-color); transition: color 0.3s; }
+        .timer { font-family: monospace; font-size: 2rem; font-weight: bold; color: var(--timer-color); transition: color 0.3s; }
+        
+        .card-bottom { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .adjust-btns { display: flex; gap: 5px; }
+        
+        button { 
+            font-family: 'Inter', sans-serif; cursor: pointer; padding: 10px 15px; border: none; 
+            border-radius: 6px; font-weight: 900; font-size: 0.85rem; text-transform: uppercase;
+            letter-spacing: 1px; transition: transform 0.1s, background 0.3s, color 0.3s;
+        }   
+          
+        button:active { transform: scale(0.95); }
+        .btn-add { background: var(--btn-add-bg); color: var(--btn-add-text); padding: 12px 20px; }
+        .btn-toggle { min-width: 110px; }
+        .running { background: var(--btn-stop-bg); color: var(--btn-stop-text); } 
+        .stopped { background: var(--btn-start-bg); color: var(--btn-start-text); } 
+        .btn-adjust { background: var(--btn-adjust-bg); color: var(--btn-adjust-text); }
+        .btn-del { background: var(--btn-del-bg); color: var(--btn-del-text); }
+        .btn-del:hover { background: var(--btn-del-hover-bg); color: var(--btn-del-hover-text); }
+        .active .project-name { color: var(--project-active-color); }
+        .active .timer { color: var(--timer-active-color); animation: blink 2s infinite; }
+        @keyframes blink { 50% { opacity: 0.7; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="total-box" id="totalBox">
+        <small id="totalLabel">TOTAL TRACKED TIME (MONDAY)</small>
+        <h1 id="grandTotal">00:00:00</h1>
+    </div>
+
+    <div class="controls day-bar">
+        <div>
+            <label for="daySelect" style="margin-right: 5px;">Active Day:</label>
+            <select id="daySelect" onchange="changeDay(this.value)">
+                <option value="sun">Sunday</option>
+                <option value="mon">Monday</option>
+                <option value="tue">Tuesday</option>
+                <option value="wed">Wednesday</option>
+                <option value="thu">Thursday</option>
+                <option value="fri">Friday</option>
+                <option value="sat">Saturday</option>
+            </select>
+        </div>
+        <button class="btn-theme" onclick="toggleSummary()">Weekly Summary</button>
+    </div>
+
+    <div id="summaryContainer" class="summary-container">
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>Project</th>
+                    <th>Sun</th>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                    <th class="col-total">Total</th>
+                </tr>
+            </thead>
+            <tbody id="summaryBody">
+                <!-- Injected via JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="pIn" placeholder="Enter Project Name..." autocomplete="off">
+        <button class="btn-add" id="addBtn">+ Add Project</button>
+    </div>
+
+    <div class="global-actions">
+        <div class="theme-buttons">
+            <button class="btn-theme" onclick="setTheme('default')">Color</button>
+            <button class="btn-theme" onclick="setTheme('bw')">B&W</button>
+            <button class="btn-theme" onclick="setTheme('dark')">Dark</button>
+        </div>
+    </div>
+
+    <div id="taskBoard"></div>
+
+    <div class="bottom-actions"> 
+        <button class="btn-theme" onclick="resetAllTimers()">Reset All</button>
+        <button class="btn-theme" onclick="deleteAllTasks()">Delete All</button>
+    </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'workTasks_Weekly_V1';
+const OLD_STORAGE_KEY = 'workTasks_Pro_Final_V2';
+const THEME_KEY = 'workTasks_Theme';
+
+localforage.config({
+    driver: localforage.INDEXEDDB,
+    name: 'WorkDayTracker',
+    storeName: 'tasks_store'
+});
+
+let tasks = [];
+
+const daysArray = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+let currentDayIndex = new Date().getDay();
+let activeDay = daysArray[currentDayIndex];
+document.getElementById('daySelect').value = activeDay;
+
+const pIn = document.getElementById('pIn');
+const addBtn = document.getElementById('addBtn');
+const board = document.getElementById('taskBoard');
+const grandTotalDisplay = document.getElementById('grandTotal');
+const totalBox = document.getElementById('totalBox');
+const totalLabel = document.getElementById('totalLabel');
+const summaryContainer = document.getElementById('summaryContainer');
+
+async function makeStoragePersistent() {
+    if (navigator.storage && navigator.storage.persist) {
+        await navigator.storage.persist();
+    }
+}
+
+async function initApp() {
+    await makeStoragePersistent();
+    try {
+        const savedTheme = await localforage.getItem(THEME_KEY);
+        setTheme(savedTheme || 'default');
+        
+        let savedData = await localforage.getItem(STORAGE_KEY);
+        
+        if (!savedData) {
+            let oldData = await localforage.getItem(OLD_STORAGE_KEY);
+            if (!oldData && localStorage.getItem(OLD_STORAGE_KEY)) {
+                oldData = JSON.parse(localStorage.getItem(OLD_STORAGE_KEY));
+            }
+            if (oldData && Array.isArray(oldData)) {
+                savedData = oldData.map(task => ({
+                    id: task.id,
+                    project: task.project,
+                    days: { sun: 0, mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0 },
+                    running: false,
+                    startTime: null
+                }));
+                await localforage.setItem(STORAGE_KEY, savedData);
+            }
+        }
+
+        if (savedData && Array.isArray(savedData)) {
+            tasks = savedData;
+        }
+    } catch (error) {
+        console.warn("Could not load data. Starting clean array.");
+        tasks = [];
+    }
+    updateDayLabel();
+    renderBoard();
+}
+
+addBtn.addEventListener('click', addTask);
+pIn.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); addTask(); } });
+
+async function setTheme(themeName) {
+    if (themeName === 'default') {
+        document.body.className = '';
+    } else {
+        document.body.className = `theme-${themeName}`;
+    }
+    try { await localforage.setItem(THEME_KEY, themeName); } catch(e) {}
+}
+
+function changeDay(newDay) {
+    tasks.forEach(t => {
+        if(t.running) toggle(t.id); 
+    });
+    activeDay = newDay;
+    updateDayLabel();
+    renderBoard();
+    if(summaryContainer.style.display === 'block') generateSummary();
+}
+
+function updateDayLabel() {
+    const dayNames = { sun: "SUNDAY", mon: "MONDAY", tue: "TUESDAY", wed: "WEDNESDAY", thu: "THURSDAY", fri: "FRIDAY", sat: "SATURDAY" };
+    totalLabel.innerText = `TOTAL TRACKED TIME (${dayNames[activeDay]})`;
+}
+
+function addTask() {
+    const name = pIn.value.trim() || 'New Project';
+    tasks.push({ 
+        id: Date.now(), 
+        project: name, 
+        days: { sun: 0, mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0 },
+        running: false,
+        startTime: null 
+    });
+    pIn.value = '';
+    saveAndRender();
+}
+
+function toggle(id) {
+    const now = Date.now();
+    tasks.forEach(t => {
+        if (t.id === id) {
+            if (!t.running) {
+                t.running = true;
+                t.startTime = now; 
+            } else {
+                const elapsed = Math.floor((now - t.startTime) / 1000);
+                t.days[activeDay] += elapsed;
+                t.running = false;
+                t.startTime = null;
+            }
+        } else if (t.running) {
+            const elapsed = Math.floor((now - t.startTime) / 1000);
+            t.days[activeDay] += elapsed;
+            t.running = false;
+            t.startTime = null;
+        }
+    });
+    saveAndRender();
+    if(summaryContainer.style.display === 'block') generateSummary();
+}
+
+function adjustTime(id, amount) {
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+        task.days[activeDay] = Math.max(0, task.days[activeDay] + amount);
+        saveAndRender();
+        if(summaryContainer.style.display === 'block') generateSummary();
+    }
+}
+
+function remove(id) {
+    if (confirm("Delete this project?")) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveAndRender();
+        if(summaryContainer.style.display === 'block') generateSummary();
+    }
+}
+
+function resetAllTimers() {
+    if (confirm("Are you sure you want to reset ALL timers for ALL days back to zero?")) {
+        tasks = tasks.map(task => ({
+            ...task,
+            days: { sun: 0, mon: 0, tue: 0, wed: 0, thu: 0, fri: 0, sat: 0 },
+            running: false,
+            startTime: null
+        }));
+        saveAndRender();
+        if(summaryContainer.style.display === 'block') generateSummary();
+    }
+}
+
+function deleteAllTasks() {
+    if (confirm("Are you sure you want to permanently delete ALL projects?")) {
+        tasks = []; 
+        saveAndRender();
+        if(summaryContainer.style.display === 'block') generateSummary();
+    }
+}
+
+function formatTime(s) {
+    const h = Math.floor(s / 3600).toString().padStart(2, '0');
+    const m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+    const sec = (s % 60).toString().padStart(2, '0');
+    return `${h}:${m}:${sec}`;
+}
+
+function getDecimalHours(seconds) {
+    if(seconds === 0) return "0.00";
+    return (seconds / 3600).toFixed(2);
+}
+
+function toggleSummary() {
+    if (summaryContainer.style.display === 'none' || summaryContainer.style.display === '') {
+        summaryContainer.style.display = 'block';
+        generateSummary();
+    } else {
+        summaryContainer.style.display = 'none';
+    }
+}
+
+function generateSummary() {
+    const tbody = document.getElementById("summaryBody");
+    tbody.innerHTML = ""; 
+    
+    tasks.forEach(task => {
+        let currentMon = task.days.mon;
+        if (task.running && activeDay === 'mon') currentMon += Math.floor((Date.now() - task.startTime) / 1000);
+        let currentTue = task.days.tue;
+        if (task.running && activeDay === 'tue') currentTue += Math.floor((Date.now() - task.startTime) / 1000);
+        let currentWed = task.days.wed;
+        if (task.running && activeDay === 'wed') currentWed += Math.floor((Date.now() - task.startTime) / 1000);
+        let currentThu = task.days.thu;
+        if (task.running && activeDay === 'thu') currentThu += Math.floor((Date.now() - task.startTime) / 1000);
+        let currentFri = task.days.fri;
+        if (task.running && activeDay === 'fri') currentFri += Math.floor((Date.now() - task.startTime) / 1000);
+        let currentSat = task.days.sat;
+        if (task.running && activeDay === 'sat') currentSat += Math.floor((Date.now() - task.startTime) / 1000);
+        let currentSun = task.days.sun;
+        if (task.running && activeDay === 'sun') currentSun += Math.floor((Date.now() - task.startTime) / 1000);
+
+        let rowTotalSecs = currentSun + currentMon + currentTue + currentWed + currentThu + currentFri + currentSat;
+
+        let row = `<tr>
+            <td>${task.project}</td>
+            <td>${getDecimalHours(currentSun)}</td>
+            <td>${getDecimalHours(currentMon)}</td>
+            <td>${getDecimalHours(currentTue)}</td>
+            <td>${getDecimalHours(currentWed)}</td>
+            <td>${getDecimalHours(currentThu)}</td>
+            <td>${getDecimalHours(currentFri)}</td>
+            <td>${getDecimalHours(currentSat)}</td>
+            <td class="col-total">${getDecimalHours(rowTotalSecs)}</td>
+        </tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+    });
+}
+
+setInterval(() => {
+    let totalSecondsForActiveDay = 0;
+    let anyRunning = false;
+    const now = Date.now();
+    
+    tasks.forEach(task => {
+        let displaySeconds = task.days[activeDay] || 0;
+        if (task.running) {
+            anyRunning = true;
+            const sessionSeconds = Math.floor((now - task.startTime) / 1000);
+            displaySeconds += sessionSeconds;
+            
+            const el = document.getElementById(`time-${task.id}`);
+            if (el) el.innerText = formatTime(displaySeconds);
+        }
+        totalSecondsForActiveDay += displaySeconds;
+    });
+
+    grandTotalDisplay.innerText = formatTime(totalSecondsForActiveDay);
+    
+    if (anyRunning) totalBox.classList.add('active');
+    else totalBox.classList.remove('active');
+
+    localforage.setItem(STORAGE_KEY, tasks).catch(() => {});
+    
+    if(summaryContainer.style.display === 'block' && anyRunning) {
+        generateSummary();
+    }
+}, 1000);
+
+function saveAndRender() {
+    localforage.setItem(STORAGE_KEY, tasks).catch(() => {});
+    renderBoard();
+}
+
+function renderBoard() {
+    board.innerHTML = '';
+    tasks.forEach(task => {
+        const card = document.createElement('div');
+        card.className = `task-card ${task.running ? 'active' : ''}`;
+        
+        const currentDisplaySecs = task.days[activeDay] || 0;
+        
+        card.innerHTML = `
+            <div class="card-top">
+                <div class="project-name">${task.project}</div>
+                <div class="timer" id="time-${task.id}">${formatTime(currentDisplaySecs)}</div>
+            </div>
+            <div class="card-bottom">
+                <div class="adjust-btns">
+                    <button class="btn-adjust" onclick="adjustTime(${task.id}, 300)">+5m</button>
+                    <button class="btn-adjust" onclick="adjustTime(${task.id}, -300)">-5m</button>
+                </div>
+                <div>
+                    <button class="btn-toggle ${task.running ? 'running' : 'stopped'}" onclick="toggle(${task.id})">
+                        ${task.running ? 'Stop' : 'Start'}
+                    </button>
+                    <button class="btn-del" onclick="remove(${task.id})">🗑</button>
+                </div>
+            </div>
+        `;
+        board.appendChild(card);
+    });
+}
+
+initApp();
+</script>
+</body>
+</html>
